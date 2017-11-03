@@ -11,17 +11,18 @@ docker:
 localup:
 	@docker-compose up -d --build
 
-localmsg:
-	@echo ""
-	${INFO} "Go to http://localhost:$(shell docker port $(shell docker-compose ps -q app) | awk '{print $$3}' | awk -F: '{print $$2}') to use Elastalert!"
-	@echo "Username: admin"
-	@echo "Password: admin"
-	@echo ""
+# localmsg:
+# 	@echo ""
+# 	${INFO} "Go to http://localhost:$(shell docker port $(shell docker-compose ps -q app) | awk '{print $$3}' | awk -F: '{print $$2}') to use Elastalert!"
+# 	@echo "Username: admin"
+# 	@echo "Password: admin"
+# 	@echo ""
 
 pull:
 	@docker pull travix/elastalert:latest
 
-local: localup localmsg
+# local: localup localmsg
+local: localup
 
 # Cosmetics
 GREEN := "\033[1;32m"

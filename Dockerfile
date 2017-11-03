@@ -22,11 +22,11 @@ ENV ELASTALERT_HOME /opt/elastalert
 # Supervisor configuration file for Elastalert.
 ENV ELASTALERT_SUPERVISOR_CONF ${CONFIG_DIR}/elastalert_supervisord.conf
 # Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
-ENV ELASTICSEARCH_HOST elasticsearchhost
+ENV ELASTICSEARCH_HOST l5-es-query.travix.com
 # Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
-ENV ELASTICSEARCH_PORT 9200
+ENV ELASTICSEARCH_PORT 443
 # Use TLS to connect to Elasticsearch (True or False)
-ENV ELASTICSEARCH_TLS False
+ENV ELASTICSEARCH_TLS True
 # Verify TLS
 ENV ELASTICSEARCH_TLS_VERIFY True
 # ElastAlert writeback index
@@ -70,12 +70,12 @@ RUN python setup.py install && \
     rm -rf /var/cache/apk/*
 
 # Copy the script used to launch the Elastalert when a container is started.
-COPY ./start-elastalert.sh /opt/
+COPY src/start-elastalert.sh /opt/
 # Make the start-script executable.
 RUN chmod +x /opt/start-elastalert.sh
 
-# Define mount points.
-VOLUME [ "${CONFIG_DIR}", "${RULES_DIRECTORY}", "${LOG_DIR}"]
+# # Define mount points.
+# VOLUME [ "${CONFIG_DIR}", "${RULES_DIRECTORY}", "${LOG_DIR}"]
 
 # Launch Elastalert when a container is started.
 CMD ["/opt/start-elastalert.sh"]
