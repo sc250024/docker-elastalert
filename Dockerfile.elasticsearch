@@ -1,0 +1,5 @@
+FROM docker.elastic.co/elasticsearch/elasticsearch:5.6.3
+
+COPY src/healthcheck-elasticsearch /usr/local/bin/
+
+HEALTHCHECK CMD ["healthcheck-elasticsearch"]

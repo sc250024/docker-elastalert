@@ -1,11 +1,14 @@
 # Ensure the targets are always run. Needed to prevent side effects when running with "-q"
-.PHONY: build local pull
+.PHONY: build localdown localup pull
 
 # Bring down any dependencies and build the image
 build:
 	@docker build -t travix/elastalert:latest .
 
-local:
+localdown:
+	@docker-compose down -v
+
+localup:
 	@docker-compose up -d --build
 
 pull:
