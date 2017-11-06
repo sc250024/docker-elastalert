@@ -1,28 +1,15 @@
 # Ensure the targets are always run. Needed to prevent side effects when running with "-q"
-.PHONY: build docker local live localup localmsg liveup pull
+.PHONY: build local pull
 
 # Bring down any dependencies and build the image
-build: docker
-
-# Rebuild the local Docker image
-docker:
+build:
 	@docker build -t travix/elastalert:latest .
 
-localup:
+local:
 	@docker-compose up -d --build
-
-# localmsg:
-# 	@echo ""
-# 	${INFO} "Go to http://localhost:$(shell docker port $(shell docker-compose ps -q app) | awk '{print $$3}' | awk -F: '{print $$2}') to use Elastalert!"
-# 	@echo "Username: admin"
-# 	@echo "Password: admin"
-# 	@echo ""
 
 pull:
 	@docker pull travix/elastalert:latest
-
-# local: localup localmsg
-local: localup
 
 # Cosmetics
 GREEN := "\033[1;32m"

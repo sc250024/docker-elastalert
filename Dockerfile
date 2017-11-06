@@ -20,19 +20,19 @@ ENV CONFIG_DIR=/opt/config \
     CONTAINER_TIMEZONE=Europe/Amsterdam \
     ELASTALERT_HOME=/opt/elastalert \
     ELASTALERT_INDEX=elastalert_status \
-    ELASTALERT_VERSION=v0.1.20 \
-    ELASTICSEARCH_HOST=l5-es-query.travix.com \
-    ELASTICSEARCH_PORT=443 \
-    ELASTICSEARCH_TLS=True \
-    ELASTICSEARCH_TLS_VERIFY=True \
+    ELASTALERT_VERSION=0.1.21 \
+    ELASTICSEARCH_HOST=elasticsearch \
+    ELASTICSEARCH_PORT=9200 \
+    ELASTICSEARCH_TLS=False \
+    ELASTICSEARCH_TLS_VERIFY=False \
     LOG_DIR=/opt/logs \
     RULES_DIRECTORY=/opt/rules \
-    SET_CONTAINER_TIMEZONE=False
+    SET_CONTAINER_TIMEZONE=True
 
 # Placing these rules here since they depend on the previous layer
 ENV ELASTALERT_CONFIG=${CONFIG_DIR}/elastalert_config.yaml \
     ELASTALERT_SUPERVISOR_CONF=${CONFIG_DIR}/elastalert_supervisord.conf \
-    ELASTALERT_URL=https://github.com/Yelp/elastalert/archive/${ELASTALERT_VERSION}.tar.gz
+    ELASTALERT_URL=https://github.com/Yelp/elastalert/archive/v${ELASTALERT_VERSION}.tar.gz
 
 WORKDIR /opt
 
@@ -41,7 +41,6 @@ RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
         ca-certificates \
-        curl \
         gcc \
         libffi-dev \
         musl-dev \
@@ -53,9 +52,8 @@ RUN apk update && \
         python2 \
         python2-dev \
         tzdata \
-    && \
-# Download and unpack Elastalert.
-    curl -sSL -o elastalert.tar.gz "${ELASTALERT_URL}" \
+        wget \
+    && wget -O elastalert.tar.gz "${ELASTALERT_URL}" \
     && tar -xvzf elastalert.tar.gz \
     && rm elastalert.tar.gz \
     && mv e* "${ELASTALERT_HOME}" \
@@ -81,12 +79,10 @@ RUN mkdir -p "${CONFIG_DIR}" \
     && mkdir -p /var/empty
 
 # Copy the script used to launch the Elastalert when a container is started.
-COPY src/start-elastalert.sh /opt/
+ADD src/start-elastalert.sh /opt/
+
 # Make the start-script executable.
 RUN chmod +x /opt/start-elastalert.sh
-
-# # Define mount points.
-# VOLUME [ "${CONFIG_DIR}", "${RULES_DIRECTORY}", "${LOG_DIR}"]
 
 # Launch Elastalert when a container is started.
 CMD ["/opt/start-elastalert.sh"]

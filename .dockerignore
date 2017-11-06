@@ -1,0 +1,7 @@
+.idea/
+*.iml
+out
+gen
+.DS_Store
+README.md
+.gitignore

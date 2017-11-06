@@ -1,15 +1,25 @@
-version: '3.1'
+version: '3.3'
 
 volumes:
-  elastalertdata:
+  elasticsearchdata:
 
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.6.3
     environment:
-      discovery.type: single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+      - cluster.name=docker-cluster
+      - discovery.type=single-node
     ports:
-      - "9200:9200"
+      - "9200"
+      - "9300"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearchdata:/usr/share/elasticsearch/data
   elastalert:
     build: .
     image: travix/elastalert:latest
@@ -18,9 +28,10 @@ services:
       interval: 10s
       retries: 3
       timeout: 10s
+    cap_add:
+      - SYS_NICE
+      - SYS_TIME
     depends_on:
       - elasticsearch
     env_file:
       - ./env.local
-    volumes:
-      - elastalertdata:/opt
