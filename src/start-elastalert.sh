@@ -4,22 +4,22 @@ set -e
 
 # Set schema and elastalert options
 case "${ELASTICSEARCH_TLS}:${ELASTICSEARCH_TLS_VERIFY}" in
-    True:True)
-        WGET_SCHEMA='https://'
-        CREATE_EA_OPTIONS='--ssl --verify-certs'
+    "True:True")
+        WGET_SCHEMA="https://"
+        CREATE_EA_OPTIONS="--ssl --verify-certs"
     ;;
-    True:False)
-        WGET_SCHEMA='https://'
-        CREATE_EA_OPTIONS='--ssl --no-verify-certs'
+    "True:False")
+        WGET_SCHEMA="https://"
+        CREATE_EA_OPTIONS="--ssl --no-verify-certs"
     ;;
     *)
-        WGET_SCHEMA='http://'
-        CREATE_EA_OPTIONS='--no-ssl'
+        WGET_SCHEMA="http://"
+        CREATE_EA_OPTIONS="--no-ssl"
     ;;
 esac
 
 # Set the timezone.
-if [ "${SET_CONTAINER_TIMEZONE}" = "True" ]; then
+if [[ "${SET_CONTAINER_TIMEZONE}" = "True" ]]; then
     cp /usr/share/zoneinfo/"${CONTAINER_TIMEZONE}" /etc/localtime && \
     echo "${CONTAINER_TIMEZONE}" >  /etc/timezone && \
     echo "Container timezone set to: ${CONTAINER_TIMEZONE}"
@@ -37,9 +37,8 @@ echo "Creating Elastalert config file from template..."
 dockerize -template "${CONFIG_DIR}/elastalert_config.yaml.tmpl:${ELASTALERT_CONFIG}"
 
 # Elastalert Supervisor configuration:
-if [ ! -f "${ELASTALERT_SUPERVISOR_CONF}" ]; then
+if [[ ! -f "${ELASTALERT_SUPERVISOR_CONF}" ]]; then
     cp "${ELASTALERT_HOME}/supervisord.conf.example" "${ELASTALERT_SUPERVISOR_CONF}" && \
-
     # Redirect Supervisor log output to a file in the designated logs directory.
     sed -i -e"s|logfile=.*log|logfile=${LOG_DIR}/elastalert_supervisord.log|g" "${ELASTALERT_SUPERVISOR_CONF}"
     # Redirect Supervisor stderr output to a file in the designated logs directory.
@@ -49,7 +48,7 @@ if [ ! -f "${ELASTALERT_SUPERVISOR_CONF}" ]; then
 fi
 
 # Set authentication if needed
-if [ -n "${ELASTICSEARCH_USER}" ] && [ -n "${ELASTICSEARCH_PASSWORD}" ]; then
+if [[ -n "${ELASTICSEARCH_USER}" ]] && [[ -n "${ELASTICSEARCH_PASSWORD}" ]]; then
     WGET_AUTH="${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@"
 else
     WGET_AUTH=""
