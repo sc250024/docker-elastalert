@@ -1,0 +1,35 @@
+rules_folder: {{ default .Env.RULES_DIRECTORY "/opt/rules" }}
+
+run_every:
+  minutes: {{ default .Env.ELASTALERT_RUN_EVERY "3" }}
+
+buffer_time:
+  minutes: {{ default .Env.ELASTALERT_BUFFER_TIME "45" }}
+
+es_host: {{ .Env.ELASTICSEARCH_HOST }}
+
+es_port: {{ .Env.ELASTICSEARCH_PORT }}
+
+{{ if .Env.ELASTICSEARCH_USER }}
+es_username: {{ .Env.ELASTICSEARCH_USER }}
+{{ end }}
+
+{{ if .Env.ELASTICSEARCH_PASSWORD }}
+es_password: {{ .Env.ELASTICSEARCH_PASSWORD }}
+{{ end }}
+
+use_ssl: {{ default .Env.ELASTICSEARCH_TLS "False" }}
+
+verify_certs: {{ default .Env.ELASTICSEARCH_TLS_VERIFY "False" }}
+
+writeback_index: {{ default .Env.ELASTALERT_INDEX "elastalert_status" }}
+
+alert_time_limit:
+  minutes: {{ default .Env.ELASTALERT_TIME_LIMIT "5" }}
+
+opsgenie_key: {{ .Env.OPSGENIE_KEY }}
+
+opsgenie_account: {{ .Env.OPSGENIE_ACCOUNT }}
+
+opsgenie_recipients:
+  - "None"

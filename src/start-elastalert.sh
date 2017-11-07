@@ -32,27 +32,9 @@ fi
 # In addition you may want to add the SYS_NICE capability, in order for ntpd to be able to modify its priority.
 ntpd -s
 
-# Elastalert configuration:
-if [ ! -f "${ELASTALERT_CONFIG}" ]; then
-    cp "${ELASTALERT_HOME}/config.yaml.example" "${ELASTALERT_CONFIG}" && \
-
-    # Set the rule directory in the Elastalert config file to external rules directory.
-    sed -i -e"s|rules_folder: [[:print:]]*|rules_folder: ${RULES_DIRECTORY}|g" "${ELASTALERT_CONFIG}"
-    # Set the Elasticsearch host that Elastalert is to query.
-    sed -i -e"s|es_host: [[:print:]]*|es_host: ${ELASTICSEARCH_HOST}|g" "${ELASTALERT_CONFIG}"
-    # Set the port used by Elasticsearch at the above address.
-    sed -i -e"s|es_port: [0-9]*|es_port: ${ELASTICSEARCH_PORT}|g" "${ELASTALERT_CONFIG}"
-    # Set the user name used to authenticate with Elasticsearch.
-    if [ -n "${ELASTICSEARCH_USER}" ]; then
-        sed -i -e"s|#es_username: [[:print:]]*|es_username: ${ELASTICSEARCH_USER}|g" "${ELASTALERT_CONFIG}"
-    fi
-    # Set the password used to authenticate with Elasticsearch.
-    if [ -n "${ELASTICSEARCH_PASSWORD}" ]; then
-        sed -i -e"s|#es_password: [[:print:]]*|es_password: ${ELASTICSEARCH_PASSWORD}|g" "${ELASTALERT_CONFIG}"
-    fi
-    # Set the writeback index used with elastalert.
-    sed -i -e"s|writeback_index: [[:print:]]*|writeback_index: ${ELASTALERT_INDEX}|g" "${ELASTALERT_CONFIG}"
-fi
+# Elastalert config template:
+echo "Creating Elastalert config file from template..."
+dockerize -template "${CONFIG_DIR}/elastalert_config.yaml.tmpl:${ELASTALERT_CONFIG}"
 
 # Elastalert Supervisor configuration:
 if [ ! -f "${ELASTALERT_SUPERVISOR_CONF}" ]; then

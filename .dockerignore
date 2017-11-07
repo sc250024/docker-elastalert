@@ -1,7 +1,7 @@
-.idea/
 *.iml
-out
-gen
 .DS_Store
-README.md
 .gitignore
+.idea/
+gen
+out
+README.md
