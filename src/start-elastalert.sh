@@ -19,10 +19,10 @@ case "${ELASTICSEARCH_TLS}:${ELASTICSEARCH_TLS_VERIFY}" in
 esac
 
 # Set the timezone.
-if [ "$SET_CONTAINER_TIMEZONE" = "True" ]; then
+if [ "${SET_CONTAINER_TIMEZONE}" = "True" ]; then
     cp /usr/share/zoneinfo/"${CONTAINER_TIMEZONE}" /etc/localtime && \
     echo "${CONTAINER_TIMEZONE}" >  /etc/timezone && \
-    echo "Container timezone set to: $CONTAINER_TIMEZONE"
+    echo "Container timezone set to: ${CONTAINER_TIMEZONE}"
 else
     echo "Container timezone not modified"
 fi
@@ -49,8 +49,8 @@ if [ ! -f "${ELASTALERT_SUPERVISOR_CONF}" ]; then
 fi
 
 # Set authentication if needed
-if [ -n "$ELASTICSEARCH_USER" ] && [ -n "$ELASTICSEARCH_PASSWORD" ]; then
-    WGET_AUTH="$ELASTICSEARCH_USER:$ELASTICSEARCH_PASSWORD@"
+if [ -n "${ELASTICSEARCH_USER}" ] && [ -n "${ELASTICSEARCH_PASSWORD}" ]; then
+    WGET_AUTH="${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@"
 else
     WGET_AUTH=""
 fi
