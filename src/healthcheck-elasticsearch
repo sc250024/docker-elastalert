@@ -2,15 +2,26 @@
 set -eo pipefail
 
 host="$(hostname --ip-address || echo '127.0.0.1')"
+port="${ELASTICSEARCH_PORT:-9200}"
 pass="${ELASTICSEARCH_PASSWORD}"
 user="${ELASTICSEARCH_USER}"
 
-if health="$(curl -fsSL "http://${user}:${pass}@${host}:9200/_cat/health?h=status")"; then
-    health="$(echo "${health}" | sed -r 's/^[[:space:]]+|[[:space:]]+$//g')" # trim whitespace (otherwise we'll have "green ")
-    if [ "${health}" = 'green' ]; then
+if [[ -n "${user}" && -n "${pass}" ]]; then
+    curlAuth="${user}:${pass}@"
+else
+    curlAuth=""
+fi
+
+if healthCheck="$(curl -fsSL "http://${curlAuth}${host}:${port}/_cat/health?h=status")"; then
+
+    # trim whitespace (otherwise we'll have "green ")
+    healthCheck="$(echo "${healthCheck}" | sed -r 's/^[[:space:]]+|[[:space:]]+$//g')"
+
+    if [[ "${healthCheck}" = "green" ]]; then
         exit 0
     fi
-    echo >&2 "unexpected health status: $health"
+
+    echo >&2 "Unexpected health status: ${healthCheck}"
 fi
 
 exit 1

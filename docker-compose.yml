@@ -1,7 +1,7 @@
 version: '3.3'
 
 volumes:
-  elasticsearchdata:
+  esdata: {}
 
 services:
   elasticsearch:
@@ -9,33 +9,39 @@ services:
       context: .
       dockerfile: Dockerfile.elasticsearch
     environment:
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - bootstrap.memory_lock=true
-      - cluster.name=docker-cluster
-      - discovery.type=single-node
+      bootstrap.memory_lock: "true"
+      cluster.name: "docker-cluster"
+      discovery.type: "single-node"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     env_file:
-      - ./env.local
+      - env.local
     ports:
-      - "9200"
-      - "9300"
+      - target: 9200
+      - target: 9300
     ulimits:
       memlock:
-        soft: -1
         hard: -1
+        soft: -1
     volumes:
-      - elasticsearchdata:/usr/share/elasticsearch/data
+      - esdata:/usr/share/elasticsearch/data:rw
   elastalert:
-    build: .
-    image: travix/elastalert:latest
-    healthcheck:
-      test: ["CMD-SHELL", "ps -ef | grep elastalert >/dev/null 2>&1"]
-      interval: 10s
-      retries: 3
-      timeout: 10s
+    build:
+      context: .
     cap_add:
       - SYS_NICE
       - SYS_TIME
     depends_on:
       - elasticsearch
     env_file:
-      - ./env.local
+      - env.local
+    healthcheck:
+      interval: 10s
+      retries: 3
+      # The square brackets are intentional. They 
+      # prevent `grep` itself from showing up in the
+      # process list and falsifying the results
+      test:
+        - CMD-SHELL
+        - ps -ef | grep "[e]lastalert" >/dev/null 2>&1
+      timeout: 10s
+    image: travix/elastalert:latest
