@@ -17,7 +17,10 @@ if healthCheck="$(curl -fsSL "http://${curlAuth}${host}:${port}/_cat/health?h=st
     # trim whitespace (otherwise we'll have "green ")
     healthCheck="$(echo "${healthCheck}" | sed -r 's/^[[:space:]]+|[[:space:]]+$//g')"
 
-    if [[ "${healthCheck}" = "green" ]]; then
+    # "yellow" should obviously only be an acceptable value on local for the
+    # sake of getting the container to repsond as 'healthy.' In production
+    # this should be tweaked.
+    if [[ "${healthCheck}" = "green" || "${healthCheck}" == "yellow" ]]; then
         exit 0
     fi
 
