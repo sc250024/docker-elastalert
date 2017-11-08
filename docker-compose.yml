@@ -34,14 +34,4 @@ services:
       - elasticsearch
     env_file:
       - env.local
-    healthcheck:
-      interval: 10s
-      retries: 3
-      # The square brackets are intentional. They 
-      # prevent `grep` itself from showing up in the
-      # process list and falsifying the results
-      test:
-        - CMD-SHELL
-        - ps -ef | grep "[e]lastalert" >/dev/null 2>&1
-      timeout: 10s
     image: travix/elastalert:latest

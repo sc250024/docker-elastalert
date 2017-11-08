@@ -64,7 +64,7 @@ RUN apk update && \
     && wget -O elastalert.tar.gz "${ELASTALERT_URL}" \
     && tar -xvzf elastalert.tar.gz \
     && rm elastalert.tar.gz \
-    && mv e* "${ELASTALERT_HOME}" \
+    && mv elastalert-* "${ELASTALERT_HOME}" \
     && cd "${ELASTALERT_HOME}" \
     && pip install --upgrade pip \
     && python setup.py install \
@@ -100,5 +100,13 @@ COPY src/config.yaml.tmpl "${CONFIG_DIR}/elastalert_config.yaml.tmpl"
 # Make the start-script executable.
 RUN chmod +x /opt/start-elastalert.sh
 
-# # Launch Elastalert when a container is started.
+WORKDIR ${ELASTALERT_HOME}
+
+# The square brackets are intentional. They 
+# prevent `grep` itself from showing up in the
+# process list and falsifying the results.
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD ps -ef | grep "[e]lastalert" >/dev/null 2>&1
+
+# Launch Elastalert when a container is started.
 CMD ["/opt/start-elastalert.sh"]
