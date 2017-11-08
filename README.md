@@ -11,10 +11,9 @@ Docker image for running Travix's Elastalert infrastructure
 
 ## Local Development Usage
 
-Locally the `docker-elastalert` instance can be run using any one of the following commands:
+Locally the `docker-elastalert` instance can be run using the following command:
 
 ```
-make localup
 docker-compose up -d --build
 ```
 
