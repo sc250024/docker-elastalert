@@ -36,17 +36,6 @@ ntpd -s
 echo "Creating Elastalert config file from template..."
 dockerize -template "${CONFIG_DIR}/elastalert_config.yaml.tmpl:${ELASTALERT_CONFIG}"
 
-# Elastalert Supervisor configuration:
-if [[ ! -f "${ELASTALERT_SUPERVISOR_CONF}" ]]; then
-    cp "${ELASTALERT_HOME}/supervisord.conf.example" "${ELASTALERT_SUPERVISOR_CONF}" && \
-    # Redirect Supervisor log output to a file in the designated logs directory.
-    sed -i -e"s|logfile=.*log|logfile=${LOG_DIR}/elastalert_supervisord.log|g" "${ELASTALERT_SUPERVISOR_CONF}"
-    # Redirect Supervisor stderr output to a file in the designated logs directory.
-    sed -i -e"s|stderr_logfile=.*log|stderr_logfile=${LOG_DIR}/elastalert_stderr.log|g" "${ELASTALERT_SUPERVISOR_CONF}"
-    # Modify the start-command.
-    sed -i -e"s|python elastalert.py|elastalert --config ${ELASTALERT_CONFIG}|g" "${ELASTALERT_SUPERVISOR_CONF}"
-fi
-
 # Set authentication if needed
 if [[ -n "${ELASTICSEARCH_USER}" ]] && [[ -n "${ELASTICSEARCH_PASSWORD}" ]]; then
     WGET_AUTH="${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@"
@@ -77,4 +66,6 @@ else
 fi
 
 echo "Starting Elastalert..."
-exec supervisord -c "${ELASTALERT_SUPERVISOR_CONF}" -n
+exec python -u "${ELASTALERT_HOME}/elastalert/elastalert.py" \
+     --config "${ELASTALERT_CONFIG}" \
+     --verbose

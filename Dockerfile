@@ -1,5 +1,7 @@
 FROM alpine:3.6
 
+LABEL maintainer="Scott Crooks <scrooks@travix.com>"
+
 # CONFIG_DIR => Directory holding configuration for Elastalert and Supervisor.
 # CONTAINER_TIMEZONE => Default container timezone as found under the directory /usr/share/zoneinfo/.
 # DOCKERIZE_VERSION => Version of `dockerize` binary to download
@@ -21,7 +23,7 @@ FROM alpine:3.6
 # SET_CONTAINER_TIMEZONE => Set this environment variable to True to set timezone on container start.
 
 ENV CONFIG_DIR=/opt/config \
-    CONTAINER_TIMEZONE=Europe/Amsterdam \
+    CONTAINER_TIMEZONE=Etc/UTC \
     DOCKERIZE_VERSION=v0.5.0 \
     ELASTALERT_BUFFER_TIME=45 \
     ELASTALERT_HOME=/opt/elastalert \
@@ -69,9 +71,7 @@ RUN apk update && \
     && pip install --upgrade pip \
     && python setup.py install \
     && pip install -e . \
-    && pip uninstall twilio --yes \
-    && pip install twilio==6.0.0 \
-    && easy_install supervisor \
+    && pip install dumb-init==1.2.0 \
     && apk del \
         gcc \
         libffi-dev \
@@ -107,6 +107,9 @@ WORKDIR ${ELASTALERT_HOME}
 # process list and falsifying the results.
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD ps -ef | grep "[e]lastalert" >/dev/null 2>&1
+
+# Runs "/usr/bin/dumb-init -- /my/script --with --args"
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Launch Elastalert when a container is started.
 CMD ["/opt/start-elastalert.sh"]
