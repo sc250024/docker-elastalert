@@ -34,7 +34,9 @@ ntpd -s
 
 # Elastalert config template:
 echo "Creating Elastalert config file from template..."
-dockerize -template "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl" | grep -Ev "^[[:space:]]*#|^$" | uniq > "${ELASTALERT_CONFIG}"
+"${LOCAL_BIN}"/dockerize -template "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl" \
+    | grep -Ev "^[[:space:]]*#|^$" \
+    | uniq > "${ELASTALERT_CONFIG}"
 
 # Set authentication if needed
 if [ -n "${ELASTICSEARCH_USER}" ] && [ -n "${ELASTICSEARCH_PASSWORD}" ]; then
@@ -66,9 +68,6 @@ else
 fi
 
 echo "Starting Elastalert..."
-# exec python -u "${APP_FOLDER}/elastalert/elastalert.py" \
-#      --config "${ELASTALERT_CONFIG}" \
-#      --verbose
 exec python -u -m elastalert.elastalert \
      --config "${ELASTALERT_CONFIG}" \
      --verbose
