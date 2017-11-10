@@ -2,87 +2,75 @@ FROM alpine:3.6
 
 LABEL maintainer="Scott Crooks <scrooks@travix.com>"
 
-## Set base Elastalert version
-# ELASTALERT_VERSION => Version of ElastAlert to download.
-ENV ELASTALERT_VERSION 0.1.21
-
-## Set configuration parameters needed for the image and container configuration
-# APP_FOLDER => Specify the extract location and home directory of the Elastalert application.
-# APP_DOWNLOAD_URL => URL from which to download Elastalert.
-# CONFIG_FOLDER => Directory holding configuration for Elastalert.
-# CONTAINER_TIMEZONE => Default container timezone as found under the directory /usr/share/zoneinfo/.
-# DOCKERIZE_VERSION => Version of `dockerize` binary to download.
-# DUMBINIT_VERSION => Specify the `dumb-init` version to use for starting the Python process; more info here: https://github.com/Yelp/dumb-init
-# LOG_FOLDER => Directory to which Elastalert logs are written.
-# RULES_FOLDER => Elastalert rules directory.
-# SET_CONTAINER_TIMEZONE => Set this environment variable to True to set timezone on container start.
+# Set configuration parameters needed for the image and container configuration
+## APP_DOWNLOAD_URL => URL from which to download Elastalert.
+## APP_FOLDER => Specify the extract location and home directory of the Elastalert application.
+## CONFD_VERSION => Version of `confd` binary to download.
+## CONFIG_FOLDER => Directory holding configuration for Elastalert.
+## CONTAINER_TIMEZONE => Default container timezone as found under the directory /usr/share/zoneinfo/.
+## DUMBINIT_VERSION => Specify the `dumb-init` version to use for starting the Python process; more info here: https://github.com/Yelp/dumb-init
+## LOG_FOLDER => Directory to which Elastalert logs are written.
+## RULES_FOLDER => Elastalert rules directory.
+## SET_CONTAINER_TIMEZONE => Set this environment variable to True to set timezone on container start.
 
 ENV APP_FOLDER=/opt/elastalert \
-    APP_DOWNLOAD_URL=https://github.com/Yelp/elastalert/archive/v${ELASTALERT_VERSION}.tar.gz \
+    CONFD_VERSION=0.14.0 \
     CONFIG_FOLDER=/opt/config \
     CONTAINER_TIMEZONE=Etc/UTC \
-    DOCKERIZE_VERSION=0.5.0 \
     DUMBINIT_VERSION=1.2.0 \
+    LOCAL_BIN=/usr/local/bin \
     LOG_FOLDER=/opt/logs \
     RULES_FOLDER=/opt/rules \
     SET_CONTAINER_TIMEZONE=False
 
-## Set parameters needed for the `src/start-elastalert.sh` script
-# ELASTALERT_CONFIG => Location of the Elastalert configuration file based on the ${CONFIG_FOLDER}
-# ELASTALERT_INDEX => ElastAlert writeback index
-# ELASTICSEARCH_HOST => Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
-# ELASTICSEARCH_PORT => Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
-# ELASTICSEARCH_USE_SSL => Use TLS to connect to Elasticsearch (True or False)
-# ELASTICSEARCH_VERIFY_CERTS => Verify TLS
+# Set parameters needed for the `src/start-elastalert.sh` script
+## ELASTALERT_CONFIG => Location of the Elastalert configuration file based on the ${CONFIG_FOLDER}
+## ELASTALERT_INDEX => ElastAlert writeback index
+## ELASTICSEARCH_HOST => Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
+## ELASTICSEARCH_PORT => Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
+## ELASTICSEARCH_USE_SSL => Use TLS to connect to Elasticsearch (True or False)
+## ELASTICSEARCH_VERIFY_CERTS => Verify TLS
 
-ENV ELASTALERT_CONFIG="${CONFIG_FOLDER}"/elastalert_config.yaml \
+ENV ELASTALERT_CONFIG="${CONFIG_FOLDER}/elastalert_config.yaml" \
     ELASTALERT_INDEX=elastalert_status \
     ELASTICSEARCH_HOST=elasticsearch \
     ELASTICSEARCH_PORT=9200 \
     ELASTICSEARCH_USE_SSL=False \
     ELASTICSEARCH_VERIFY_CERTS=False
 
-WORKDIR /opt
+# Set base Elastalert version
+## ELASTALERT_VERSION => Version of ElastAlert to download.
+ENV ELASTALERT_VERSION 0.1.21
 
-# Install software required for Elastalert and NTP for time synchronization.
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache \
+# Install build time packages
+RUN set -ex \
+    && apk update \
+    && apk upgrade \
+    && apk add --no-cache \
         ca-certificates \
-        gcc \
-        libffi-dev \
-        musl-dev \
         openntpd \
         openssl \
-        openssl-dev \
         py2-pip \
         py2-yaml \
         python2 \
-        python2-dev \
         tzdata \
         wget \
-    # && wget -O elastalert.tar.gz "${APP_DOWNLOAD_URL}" \
-    # && tar -xvzf elastalert.tar.gz \
-    # && rm elastalert.tar.gz \
-    # && mv elastalert-* "${APP_FOLDER}" \
-    # && cd "${APP_FOLDER}" \
-    # && pip install --upgrade pip \
-    # && python setup.py install \
-    # && pip install -e . \
-    && pip install elastalert=="${ELASTALERT_VERSION}" \
-    && pip install dumb-init=="${DUMBINIT_VERSION}" \
-    && apk del \
+    && apk add --no-cache --virtual \
+        .build-dependencies \
         gcc \
         libffi-dev \
         musl-dev \
         openssl-dev \
         python2-dev \
+    && pip install dumb-init=="${DUMBINIT_VERSION}" \
+    && pip install elastalert=="${ELASTALERT_VERSION}" \
+    && apk del .build-dependencies \
     && rm -rf /var/cache/apk/*
 
-RUN wget -O dockerize.tar.gz \
-        https://github.com/jwilder/dockerize/releases/download/v"${DOCKERIZE_VERSION}"/dockerize-alpine-linux-amd64-v"${DOCKERIZE_VERSION}".tar.gz \
-    && tar -C /usr/local/bin -xzvf dockerize.tar.gz \
-    && rm dockerize.tar.gz
+# Get ConfD for configuration templating
+RUN wget -nv -O "${LOCAL_BIN}/confd" \
+        https://github.com/kelseyhightower/confd/releases/download/v"${CONFD_VERSION}"/confd-"${CONFD_VERSION}"-linux-amd64 \
+    && chmod +x /usr/local/bin/confd
 
 # Create directories. The /var/empty directory is used by openntpd.
 RUN mkdir -p "${CONFIG_FOLDER}" \
@@ -98,8 +86,6 @@ COPY src/elastalert_config.yaml.tmpl "${CONFIG_FOLDER}/elastalert_config.yaml.tm
 
 # Make the start-script executable.
 RUN chmod +x /opt/start-elastalert.sh
-
-WORKDIR ${APP_FOLDER}
 
 # The square brackets around the 'e' are intentional. They prevent `grep`
 # itself from showing up in the process list and falsifying the results.
