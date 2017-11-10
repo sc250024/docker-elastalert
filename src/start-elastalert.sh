@@ -66,6 +66,9 @@ else
 fi
 
 echo "Starting Elastalert..."
-exec python -u "${APP_FOLDER}/elastalert/elastalert.py" \
+# exec python -u "${APP_FOLDER}/elastalert/elastalert.py" \
+#      --config "${ELASTALERT_CONFIG}" \
+#      --verbose
+exec python -u -m elastalert.elastalert \
      --config "${ELASTALERT_CONFIG}" \
      --verbose

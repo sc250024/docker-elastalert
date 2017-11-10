@@ -4,7 +4,7 @@ LABEL maintainer="Scott Crooks <scrooks@travix.com>"
 
 ## Set base Elastalert version
 # ELASTALERT_VERSION => Version of ElastAlert to download.
-ENV ELASTALERT_VERSION 0.1.20
+ENV ELASTALERT_VERSION 0.1.21
 
 ## Set configuration parameters needed for the image and container configuration
 # APP_FOLDER => Specify the extract location and home directory of the Elastalert application.
@@ -61,14 +61,15 @@ RUN apk update && \
         python2-dev \
         tzdata \
         wget \
-    && wget -O elastalert.tar.gz "${APP_DOWNLOAD_URL}" \
-    && tar -xvzf elastalert.tar.gz \
-    && rm elastalert.tar.gz \
-    && mv elastalert-* "${APP_FOLDER}" \
-    && cd "${APP_FOLDER}" \
-    && pip install --upgrade pip \
-    && python setup.py install \
-    && pip install -e . \
+    # && wget -O elastalert.tar.gz "${APP_DOWNLOAD_URL}" \
+    # && tar -xvzf elastalert.tar.gz \
+    # && rm elastalert.tar.gz \
+    # && mv elastalert-* "${APP_FOLDER}" \
+    # && cd "${APP_FOLDER}" \
+    # && pip install --upgrade pip \
+    # && python setup.py install \
+    # && pip install -e . \
+    && pip install elastalert=="${ELASTALERT_VERSION}" \
     && pip install dumb-init=="${DUMBINIT_VERSION}" \
     && apk del \
         gcc \
@@ -79,7 +80,7 @@ RUN apk update && \
     && rm -rf /var/cache/apk/*
 
 RUN wget -O dockerize.tar.gz \
-        https://github.com/jwilder/dockerize/releases/download/"${DOCKERIZE_VERSION}"/dockerize-alpine-linux-amd64-v"${DOCKERIZE_VERSION}".tar.gz \
+        https://github.com/jwilder/dockerize/releases/download/v"${DOCKERIZE_VERSION}"/dockerize-alpine-linux-amd64-v"${DOCKERIZE_VERSION}".tar.gz \
     && tar -C /usr/local/bin -xzvf dockerize.tar.gz \
     && rm dockerize.tar.gz
 
@@ -93,7 +94,7 @@ RUN mkdir -p "${CONFIG_FOLDER}" \
 COPY src/start-elastalert.sh /opt/
 
 # Copy the ${ELASTALERT_CONFIG} template
-COPY src/config.yaml.tmpl "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl"
+COPY src/elastalert_config.yaml.tmpl "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl"
 
 # Make the start-script executable.
 RUN chmod +x /opt/start-elastalert.sh
@@ -104,7 +105,7 @@ WORKDIR ${APP_FOLDER}
 # itself from showing up in the process list and falsifying the results.
 # See here: https://stackoverflow.com/questions/9375711/more-elegant-ps-aux-grep-v-grep
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD ps -ef | grep "[e]lastalert" >/dev/null 2>&1
+    CMD ps -ef | grep "[e]lastalert.elastalert" >/dev/null 2>&1
 
 # Runs "/usr/bin/dumb-init -- /my/script --with --args"
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
