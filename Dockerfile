@@ -2,47 +2,45 @@ FROM alpine:3.6
 
 LABEL maintainer="Scott Crooks <scrooks@travix.com>"
 
-# CONFIG_DIR => Directory holding configuration for Elastalert and Supervisor.
+## Set base Elastalert version
+# ELASTALERT_VERSION => Version of ElastAlert to download.
+ENV ELASTALERT_VERSION 0.1.20
+
+## Set configuration parameters needed for the image and container configuration
+# APP_FOLDER => Specify the extract location and home directory of the Elastalert application.
+# APP_DOWNLOAD_URL => URL from which to download Elastalert.
+# CONFIG_FOLDER => Directory holding configuration for Elastalert.
 # CONTAINER_TIMEZONE => Default container timezone as found under the directory /usr/share/zoneinfo/.
-# DOCKERIZE_VERSION => Version of `dockerize` binary to download
-# ELASTALERT_BUFFER_TIME => Time in minutes to run Elastalert; found under the 'buffer_time' setting
-# ELASTALERT_CONFIG => Elastalert configuration file path in configuration directory.
-# ELASTALERT_HOME => Elastalert home directory full path.
-# ELASTALERT_INDEX => ElastAlert writeback index
-# ELASTALERT_RUN_EVERY => How often to query Elasticsearch; found under the 'run_every' setting
-# ELASTALERT_SUPERVISOR_CONF => Supervisor configuration file for Elastalert.
-# ELASTALERT_TIME_LIMIT => Specify the retry window for failed alerts in minutes; found under the 'alert_time_limit' setting
-# ELASTALERT_URL => URL from which to download Elastalert.
-# ELASTALERT_VERSION => Version of ElastAlert to download
-# ELASTICSEARCH_HOST => Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
-# ELASTICSEARCH_PORT => Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
-# ELASTICSEARCH_TLS => Use TLS to connect to Elasticsearch (True or False)
-# ELASTICSEARCH_TLS_VERIFY => Verify TLS
-# LOG_DIR => Directory to which Elastalert and Supervisor logs are written.
-# RULES_DIRECTORY => Elastalert rules directory.
+# DOCKERIZE_VERSION => Version of `dockerize` binary to download.
+# DUMBINIT_VERSION => Specify the `dumb-init` version to use for starting the Python process; more info here: https://github.com/Yelp/dumb-init
+# LOG_FOLDER => Directory to which Elastalert logs are written.
+# RULES_FOLDER => Elastalert rules directory.
 # SET_CONTAINER_TIMEZONE => Set this environment variable to True to set timezone on container start.
 
-ENV CONFIG_DIR=/opt/config \
+ENV APP_FOLDER=/opt/elastalert \
+    APP_DOWNLOAD_URL=https://github.com/Yelp/elastalert/archive/v${ELASTALERT_VERSION}.tar.gz \
+    CONFIG_FOLDER=/opt/config \
     CONTAINER_TIMEZONE=Etc/UTC \
-    DOCKERIZE_VERSION=v0.5.0 \
-    ELASTALERT_BUFFER_TIME=45 \
-    ELASTALERT_HOME=/opt/elastalert \
+    DOCKERIZE_VERSION=0.5.0 \
+    DUMBINIT_VERSION=1.2.0 \
+    LOG_FOLDER=/opt/logs \
+    RULES_FOLDER=/opt/rules \
+    SET_CONTAINER_TIMEZONE=False
+
+## Set parameters needed for the `src/start-elastalert.sh` script
+# ELASTALERT_CONFIG => Location of the Elastalert configuration file based on the ${CONFIG_FOLDER}
+# ELASTALERT_INDEX => ElastAlert writeback index
+# ELASTICSEARCH_HOST => Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
+# ELASTICSEARCH_PORT => Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
+# ELASTICSEARCH_USE_SSL => Use TLS to connect to Elasticsearch (True or False)
+# ELASTICSEARCH_VERIFY_CERTS => Verify TLS
+
+ENV ELASTALERT_CONFIG="${CONFIG_FOLDER}"/elastalert_config.yaml \
     ELASTALERT_INDEX=elastalert_status \
-    ELASTALERT_RUN_EVERY=3 \
-    ELASTALERT_TIME_LIMIT=5 \
-    ELASTALERT_VERSION=0.1.21 \
     ELASTICSEARCH_HOST=elasticsearch \
     ELASTICSEARCH_PORT=9200 \
-    ELASTICSEARCH_TLS=False \
-    ELASTICSEARCH_TLS_VERIFY=False \
-    LOG_DIR=/opt/logs \
-    RULES_DIRECTORY=/opt/rules \
-    SET_CONTAINER_TIMEZONE=True
-
-# Placing these rules here since they depend on the previous layer
-ENV ELASTALERT_CONFIG=${CONFIG_DIR}/elastalert_config.yaml \
-    ELASTALERT_SUPERVISOR_CONF=${CONFIG_DIR}/elastalert_supervisord.conf \
-    ELASTALERT_URL=https://github.com/Yelp/elastalert/archive/v${ELASTALERT_VERSION}.tar.gz
+    ELASTICSEARCH_USE_SSL=False \
+    ELASTICSEARCH_VERIFY_CERTS=False
 
 WORKDIR /opt
 
@@ -63,15 +61,15 @@ RUN apk update && \
         python2-dev \
         tzdata \
         wget \
-    && wget -O elastalert.tar.gz "${ELASTALERT_URL}" \
+    && wget -O elastalert.tar.gz "${APP_DOWNLOAD_URL}" \
     && tar -xvzf elastalert.tar.gz \
     && rm elastalert.tar.gz \
-    && mv elastalert-* "${ELASTALERT_HOME}" \
-    && cd "${ELASTALERT_HOME}" \
+    && mv elastalert-* "${APP_FOLDER}" \
+    && cd "${APP_FOLDER}" \
     && pip install --upgrade pip \
     && python setup.py install \
     && pip install -e . \
-    && pip install dumb-init==1.2.0 \
+    && pip install dumb-init=="${DUMBINIT_VERSION}" \
     && apk del \
         gcc \
         libffi-dev \
@@ -81,30 +79,30 @@ RUN apk update && \
     && rm -rf /var/cache/apk/*
 
 RUN wget -O dockerize.tar.gz \
-        https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-alpine-linux-amd64-${DOCKERIZE_VERSION}.tar.gz \
+        https://github.com/jwilder/dockerize/releases/download/"${DOCKERIZE_VERSION}"/dockerize-alpine-linux-amd64-v"${DOCKERIZE_VERSION}".tar.gz \
     && tar -C /usr/local/bin -xzvf dockerize.tar.gz \
     && rm dockerize.tar.gz
 
 # Create directories. The /var/empty directory is used by openntpd.
-RUN mkdir -p "${CONFIG_DIR}" \
-    && mkdir -p "${RULES_DIRECTORY}" \
-    && mkdir -p "${LOG_DIR}" \
+RUN mkdir -p "${CONFIG_FOLDER}" \
+    && mkdir -p "${RULES_FOLDER}" \
+    && mkdir -p "${LOG_FOLDER}" \
     && mkdir -p /var/empty
 
 # Copy the script used to launch the Elastalert when a container is started.
 COPY src/start-elastalert.sh /opt/
 
 # Copy the ${ELASTALERT_CONFIG} template
-COPY src/config.yaml.tmpl "${CONFIG_DIR}/elastalert_config.yaml.tmpl"
+COPY src/config.yaml.tmpl "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl"
 
 # Make the start-script executable.
 RUN chmod +x /opt/start-elastalert.sh
 
-WORKDIR ${ELASTALERT_HOME}
+WORKDIR ${APP_FOLDER}
 
-# The square brackets are intentional. They 
-# prevent `grep` itself from showing up in the
-# process list and falsifying the results.
+# The square brackets around the 'e' are intentional. They prevent `grep`
+# itself from showing up in the process list and falsifying the results.
+# See here: https://stackoverflow.com/questions/9375711/more-elegant-ps-aux-grep-v-grep
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD ps -ef | grep "[e]lastalert" >/dev/null 2>&1
 

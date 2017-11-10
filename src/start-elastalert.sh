@@ -3,7 +3,7 @@
 set -e
 
 # Set schema and elastalert options
-case "${ELASTICSEARCH_TLS}:${ELASTICSEARCH_TLS_VERIFY}" in
+case "${ELASTICSEARCH_USE_SSL}:${ELASTICSEARCH_VERIFY_CERTS}" in
     "True:True")
         WGET_SCHEMA="https://"
         CREATE_EA_OPTIONS="--ssl --verify-certs"
@@ -19,7 +19,7 @@ case "${ELASTICSEARCH_TLS}:${ELASTICSEARCH_TLS_VERIFY}" in
 esac
 
 # Set the timezone.
-if [[ "${SET_CONTAINER_TIMEZONE}" = "True" ]]; then
+if [ "${SET_CONTAINER_TIMEZONE}" = "True" ]; then
     cp /usr/share/zoneinfo/"${CONTAINER_TIMEZONE}" /etc/localtime && \
     echo "${CONTAINER_TIMEZONE}" >  /etc/timezone && \
     echo "Container timezone set to: ${CONTAINER_TIMEZONE}"
@@ -34,10 +34,10 @@ ntpd -s
 
 # Elastalert config template:
 echo "Creating Elastalert config file from template..."
-dockerize -template "${CONFIG_DIR}/elastalert_config.yaml.tmpl:${ELASTALERT_CONFIG}"
+dockerize -template "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl" | grep -Ev "^[[:space:]]*#|^$" | uniq > "${ELASTALERT_CONFIG}"
 
 # Set authentication if needed
-if [[ -n "${ELASTICSEARCH_USER}" ]] && [[ -n "${ELASTICSEARCH_PASSWORD}" ]]; then
+if [ -n "${ELASTICSEARCH_USER}" ] && [ -n "${ELASTICSEARCH_PASSWORD}" ]; then
     WGET_AUTH="${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@"
 else
     WGET_AUTH=""
@@ -62,10 +62,10 @@ then
         --index "${ELASTALERT_INDEX}" \
         --old-index ""
 else
-    echo "Elastalert index already exists in Elasticsearch."
+    echo "Elastalert index \`${ELASTALERT_INDEX}\` already exists in Elasticsearch."
 fi
 
 echo "Starting Elastalert..."
-exec python -u "${ELASTALERT_HOME}/elastalert/elastalert.py" \
+exec python -u "${APP_FOLDER}/elastalert/elastalert.py" \
      --config "${ELASTALERT_CONFIG}" \
      --verbose
