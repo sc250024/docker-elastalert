@@ -5,7 +5,7 @@ set -e
 SCRIPT_NAME="$(basename ${0})"
 
 if [ "$(ls "${RULES_FOLDER}")" ]; then
-    find "${RULES_FOLDER}" ! -name "$(printf "*\n*")" -name '*.yaml' > /tmp/rulelist
+    find "${RULES_FOLDER}/" -type f -name "*.yaml" -o -name "*.yml" > /tmp/rulelist
     while IFS= read -r file; do
         echo "=> ${SCRIPT_NAME}: Checking syntax on Elastalert rule ${file}..."
         elastalert-test-rule \
