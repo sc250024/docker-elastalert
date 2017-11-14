@@ -34,4 +34,3 @@ services:
       - elasticsearch
     env_file:
       - env.local
-    image: travix/elastalert:latest
