@@ -34,7 +34,7 @@ ntpd -s
 
 # Elastalert config template:
 echo "Creating Elastalert config file from template..."
-"${LOCAL_BIN}"/dockerize -template "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl" \
+dockerize -template "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl" \
     | grep -Ev "^[[:space:]]*#|^$" \
     | uniq > "${ELASTALERT_CONFIG}"
 

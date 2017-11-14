@@ -10,12 +10,11 @@ LABEL maintainer="Scott Crooks <scrooks@travix.com>"
 ## RULES_FOLDER => Elastalert rules directory.
 ## SET_CONTAINER_TIMEZONE => Set this environment variable to True to set timezone on container start.
 
-ENV CONFIG_FOLDER=/opt/config \
+ENV CONFIG_FOLDER=/opt/elastalert/config \
     CONTAINER_TIMEZONE=Etc/UTC \
     DOCKERIZE_VERSION=0.5.0 \
     DUMBINIT_VERSION=1.2.0 \
-    LOCAL_BIN=/usr/local/bin \
-    RULES_FOLDER=/opt/rules \
+    RULES_FOLDER=/opt/elastalert/rules \
     SET_CONTAINER_TIMEZONE=False
 
 # Set parameters needed for the `src/start-elastalert` script
@@ -63,8 +62,8 @@ RUN set -ex \
 RUN set -ex \
     && wget -nv -O dockerize.tar.gz \
         "https://github.com/jwilder/dockerize/releases/download/v${DOCKERIZE_VERSION}/dockerize-alpine-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz" \
-    && tar -C "${LOCAL_BIN}" -xzvf dockerize.tar.gz \
-    && chmod +x "${LOCAL_BIN}/dockerize" \
+    && tar -C /usr/local/bin -xzvf dockerize.tar.gz \
+    && chmod +x "/usr/local/bin/dockerize" \
     && rm dockerize.tar.gz
 
 # Create directories. The /var/empty directory is used by openntpd.
@@ -76,10 +75,10 @@ RUN mkdir -p "${CONFIG_FOLDER}" \
 COPY src/elastalert_config.yaml.tmpl "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl"
 
 # Copy the script used to launch the Elastalert when a container is started.
-COPY src/start-elastalert /opt/
+COPY src/start-elastalert /opt/elastalert/
 
 # Make the start-script executable.
-RUN chmod +x /opt/start-elastalert
+RUN chmod +x /opt/elastalert/start-elastalert
 
 # The square brackets around the 'e' are intentional. They prevent `grep`
 # itself from showing up in the process list and falsifying the results.
@@ -91,4 +90,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Launch Elastalert when a container is started.
-CMD ["/opt/start-elastalert"]
+CMD ["/opt/elastalert/start-elastalert"]
