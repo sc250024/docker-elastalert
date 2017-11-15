@@ -55,7 +55,7 @@ RUN set -ex \
         python2-dev \
     && pip install dumb-init=="${DUMBINIT_VERSION}" \
     && pip install elastalert=="${ELASTALERT_VERSION}" \
-    && apk del .build-dependencies \
+    && apk del --purge .build-dependencies \
     && rm -rf /var/cache/apk/*
 
 # Get Dockerize for configuration templating

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -eo pipefail
 
 SCRIPT_NAME="$(basename "${0}")"
 
@@ -36,9 +36,9 @@ case "${ELASTICSEARCH_USE_SSL}:${ELASTICSEARCH_VERIFY_CERTS}" in
 esac
 
 # Set the timezone.
-if [ "${SET_CONTAINER_TIMEZONE,,}" = "true" ]; then
-    cp /usr/share/zoneinfo/"${CONTAINER_TIMEZONE}" /etc/localtime && \
-    echo "=> ${SCRIPT_NAME}: ${CONTAINER_TIMEZONE}" >  /etc/timezone && \
+if echo "${SET_CONTAINER_TIMEZONE}" | grep -q '[Tt]rue'; then
+    cp "/usr/share/zoneinfo/${CONTAINER_TIMEZONE}" /etc/localtime && \
+    echo "${CONTAINER_TIMEZONE}" > /etc/timezone && \
     echo "=> ${SCRIPT_NAME}: Container timezone set to: ${CONTAINER_TIMEZONE}"
 else
     echo "=> ${SCRIPT_NAME}: Container timezone not modified"
@@ -71,7 +71,7 @@ done
 sleep 5
 
 # Check if the Elastalert index exists in Elasticsearch and create it if it does not.
-if ! wget -q -T 3 -O - "${WGET_SCHEMA}${WGET_AUTH}${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}/${ELASTALERT_INDEX}" 2>/dev/null
+if ! wget -q -T 3 -O - "${WGET_SCHEMA}${WGET_AUTH}${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}/${ELASTALERT_INDEX}" >/dev/null 2>&1
 then
     echo "=> ${SCRIPT_NAME}: Creating Elastalert index in Elasticsearch..."
     elastalert-create-index ${CREATE_EA_OPTIONS} \

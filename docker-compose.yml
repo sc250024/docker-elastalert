@@ -34,3 +34,4 @@ services:
       - elasticsearch
     env_file:
       - env.local
+    image: sc250024/elastalert:latest
