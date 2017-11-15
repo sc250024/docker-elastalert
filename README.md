@@ -1,6 +1,6 @@
 # docker-elastalert
 
-Docker image for running Travix's Elastalert infrastructure
+Docker image for running Elastalert
 
 ## Features
 
@@ -19,7 +19,7 @@ docker-compose up -d --build
 
 The local cluster spins up a dummy Elasticsearch container, and then the Elastalert container. When the Elastalert container starts, the `CMD` script runs through the following processes:
 
-* Sets container timezone to `${CONTAINER_TIMEZONE}` if the `${SET_CONTAINER_TIMEZONE}` is set to `True`. The default is `Europe/Amsterdam`.
+* Sets container timezone to `${CONTAINER_TIMEZONE}` if the `${SET_CONTAINER_TIMEZONE}` is set to `True`. The default is `Etc/UTC`.
 * Starts the NTP daemon for time synchronization. This requires the following Linux capabilities set via `cap_add`: `SYS_NICE` and `SYS_TIME`.
 * Populates the Elastalert template located at `${CONFIG_DIR}/elastalert_config.yaml.tmpl` with environment variables using the `dockerize` binary ([Dockerize Project](https://github.com/jwilder/dockerize)).
 * Changes some defaults about the Elastalert supervisord configuration.

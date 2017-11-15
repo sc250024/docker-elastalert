@@ -1,6 +1,6 @@
 FROM alpine:3.6
 
-LABEL maintainer="Scott Crooks <scrooks@travix.com>"
+LABEL maintainer="Scott Crooks <scott.crooks@gmail.com>"
 
 # Set configuration parameters needed for the image and container configuration
 ## CONFIG_FOLDER => Directory holding configuration for Elastalert.
@@ -15,7 +15,7 @@ ENV CONFIG_FOLDER=/opt/elastalert/config \
     DOCKERIZE_VERSION=0.5.0 \
     DUMBINIT_VERSION=1.2.0 \
     RULES_FOLDER=/opt/elastalert/rules \
-    SET_CONTAINER_TIMEZONE=False
+    SET_CONTAINER_TIMEZONE=True
 
 # Set parameters needed for the `src/start-elastalert` script
 ## ELASTALERT_CONFIG => Location of the Elastalert configuration file based on the ${CONFIG_FOLDER}
