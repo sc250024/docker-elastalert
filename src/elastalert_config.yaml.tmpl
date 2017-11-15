@@ -30,7 +30,7 @@ es_url_prefix: {{ .Env.ELASTICSEARCH_URL_PREFIX }}
 {{ end }}
 
 # Connect with TLS to Elasticsearch
-use_ssl: {{ default .Env.ELASTICSEARCH_TLS "False" }}
+use_ssl: {{ default .Env.ELASTICSEARCH_USE_SSL "False" }}
 
 {{ if .Env.ELASTICSEARCH_SEND_GET_BODY_AS }}
 # GET request with body is the default option for Elasticsearch.
@@ -51,7 +51,7 @@ es_password: {{ .Env.ELASTICSEARCH_PASSWORD }}
 
 # Use SSL authentication with client certificates client_cert must be
 # a pem file containing both cert and key for client
-verify_certs: {{ default .Env.ELASTICSEARCH_TLS_VERIFY "False" }}
+verify_certs: {{ default .Env.ELASTICSEARCH_VERIFY_CERTS "False" }}
 {{ if .Env.ELASTICSEARCH_CA_CERTS }}
 ca_certs: {{ .Env.ELASTICSEARCH_CA_CERTS }}
 {{ end }}
