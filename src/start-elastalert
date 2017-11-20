@@ -2,89 +2,101 @@
 
 set -eo pipefail
 
-SCRIPT_NAME="$(basename "${0}")"
-
-# Check the rules and see if they are valid; otherwise, exit
-if [ "$(ls "${RULES_FOLDER}")" ]; then
-    find "${RULES_FOLDER}/" -type f -name "*.yaml" -o -name "*.yml" > /tmp/rulelist
-    while IFS= read -r file; do
-        echo "=> ${SCRIPT_NAME}: Checking syntax on Elastalert rule ${file}..."
-        elastalert-test-rule \
-            --schema-only \
-            --stop-error \
-            "${file}"
-    done < /tmp/rulelist
-    rm /tmp/rulelist
-else
-    echo "=> ${SCRIPT_NAME}: Rules folder ${RULES_FOLDER} is empty. Skipping checking"
-fi
+scriptName="$(basename "${0}")"
 
 # Set schema and elastalert options
 case "${ELASTICSEARCH_USE_SSL}:${ELASTICSEARCH_VERIFY_CERTS}" in
     "True:True")
-        WGET_SCHEMA="https://"
-        CREATE_EA_OPTIONS="--ssl --verify-certs"
+        wgetSchema="https://"
+        createEaOptions="--ssl --verify-certs"
     ;;
     "True:False")
-        WGET_SCHEMA="https://"
-        CREATE_EA_OPTIONS="--ssl --no-verify-certs"
+        wgetSchema="https://"
+        createEaOptions="--ssl --no-verify-certs"
     ;;
     *)
-        WGET_SCHEMA="http://"
-        CREATE_EA_OPTIONS="--no-ssl"
+        wgetSchema="http://"
+        createEaOptions="--no-ssl"
     ;;
 esac
 
-# Set the timezone.
-if echo "${SET_CONTAINER_TIMEZONE}" | grep -q '[Tt]rue'; then
-    cp "/usr/share/zoneinfo/${CONTAINER_TIMEZONE}" /etc/localtime && \
-    echo "${CONTAINER_TIMEZONE}" > /etc/timezone && \
-    echo "=> ${SCRIPT_NAME}: Container timezone set to: ${CONTAINER_TIMEZONE}"
-else
-    echo "=> ${SCRIPT_NAME}: Container timezone not modified"
-fi
-
-# Force immediate synchronisation of the time and start the time-synchronization service.
-# In order to be able to use ntpd in the container, it must be run with the SYS_TIME capability.
-# In addition you may want to add the SYS_NICE capability, in order for ntpd to be able to modify its priority.
-ntpd -s
-
-# Elastalert config template:
-echo "=> ${SCRIPT_NAME}: Creating Elastalert config file from template..."
-dockerize -template "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl" \
-    | grep -Ev "^[[:space:]]*#|^$" \
-    | uniq > "${ELASTALERT_CONFIG}"
-
 # Set authentication if needed
 if [ -n "${ELASTICSEARCH_USER}" ] && [ -n "${ELASTICSEARCH_PASSWORD}" ]; then
-    WGET_AUTH="${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@"
+    wgetAuth="${ELASTICSEARCH_USER}:${ELASTICSEARCH_PASSWORD}@"
 else
-    WGET_AUTH=""
+    wgetAuth=""
 fi
 
-# Wait until Elasticsearch is online since otherwise Elastalert will fail.
-while ! wget -q -T 3 -O - "${WGET_SCHEMA}${WGET_AUTH}${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}" 2>/dev/null
-do
-    echo "=> ${SCRIPT_NAME}: Waiting for Elasticsearch..."
-    sleep 1
-done
-sleep 5
+function __check_rules() {
+    # Check the rules and see if they are valid; otherwise, exit
+    if [ "$(ls "${RULES_FOLDER}")" ]; then
+        find "${RULES_FOLDER}/" -type f -name "*.yaml" -o -name "*.yml" > /tmp/rulelist
+        while IFS= read -r file; do
+            echo "=> ${scriptName}: Checking syntax on Elastalert rule ${file}..."
+            elastalert-test-rule \
+                --schema-only \
+                --stop-error \
+                "${file}"
+        done < /tmp/rulelist
+        rm /tmp/rulelist
+    else
+        echo "=> ${scriptName}: Rules folder ${RULES_FOLDER} is empty. Skipping checking"
+    fi
+}
 
-# Check if the Elastalert index exists in Elasticsearch and create it if it does not.
-if ! wget -q -T 3 -O - "${WGET_SCHEMA}${WGET_AUTH}${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}/${ELASTALERT_INDEX}" >/dev/null 2>&1
-then
-    echo "=> ${SCRIPT_NAME}: Creating Elastalert index in Elasticsearch..."
-    elastalert-create-index ${CREATE_EA_OPTIONS} \
-        --config "${ELASTALERT_CONFIG}" \
-        --host "${ELASTICSEARCH_HOST}" \
-        --index "${ELASTALERT_INDEX}" \
-        --old-index "" \
-        --port "${ELASTICSEARCH_PORT}"
-else
-    echo "=> ${SCRIPT_NAME}: Elastalert index \`${ELASTALERT_INDEX}\` already exists in Elasticsearch."
-fi
+function __config_timezone_and_sync() {
+    # Set the timezone.
+    if echo "${SET_CONTAINER_TIMEZONE}" | grep -q '[Tt]rue'; then
+        cp "/usr/share/zoneinfo/${CONTAINER_TIMEZONE}" /etc/localtime && \
+        echo "${CONTAINER_TIMEZONE}" > /etc/timezone && \
+        echo "=> ${scriptName}: Container timezone set to: ${CONTAINER_TIMEZONE}"
+    else
+        echo "=> ${scriptName}: Container timezone not modified"
+    fi
 
-echo "=> ${SCRIPT_NAME}: Starting Elastalert..."
-exec python -u -m elastalert.elastalert \
-     --config "${ELASTALERT_CONFIG}" \
-     --verbose
+    # Force immediate synchronisation of the time and start the time-synchronization service.
+    # In order to be able to use ntpd in the container, it must be run with the SYS_TIME capability.
+    # In addition you may want to add the SYS_NICE capability, in order for ntpd to be able to modify its priority.
+    ntpd -s
+}
+
+function __config_elastalert() {
+    # Elastalert config template:
+    echo "=> ${scriptName}: Creating Elastalert config file from template..."
+    dockerize -template "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl" \
+        | grep -Ev "^[[:space:]]*#|^$" \
+        | uniq > "${ELASTALERT_CONFIG}"
+}
+
+function __wait_for_elasticsearch() {
+    # Wait until Elasticsearch is online since otherwise Elastalert will fail.
+    while ! wget -q -T 3 -O - "${wgetSchema}${wgetAuth}${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}" 2>/dev/null
+    do
+        echo "=> ${scriptName}: Waiting for Elasticsearch..."
+        sleep 1
+    done
+    sleep 5
+}
+
+function __create_elastalert_index() {
+    # Check if the Elastalert index exists in Elasticsearch and create it if it does not.
+    if ! wget -q -T 3 -O - "${wgetSchema}${wgetAuth}${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}/${ELASTALERT_INDEX}" >/dev/null 2>&1
+    then
+        echo "=> ${scriptName}: Creating Elastalert index in Elasticsearch..."
+        elastalert-create-index ${createEaOptions} \
+            --config "${ELASTALERT_CONFIG}" \
+            --host "${ELASTICSEARCH_HOST}" \
+            --index "${ELASTALERT_INDEX}" \
+            --old-index "" \
+            --port "${ELASTICSEARCH_PORT}"
+    else
+        echo "=> ${scriptName}: Elastalert index \`${ELASTALERT_INDEX}\` already exists in Elasticsearch."
+    fi
+}
+
+function __start_elastalert() {
+    echo "=> ${scriptName}: Starting Elastalert..."
+    exec python -u -m elastalert.elastalert \
+         --config "${ELASTALERT_CONFIG}" \
+         --verbose
+}
