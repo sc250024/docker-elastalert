@@ -33,10 +33,6 @@ ENV ELASTALERT_CONFIG="${CONFIG_FOLDER}/elastalert_config.yaml" \
     ELASTICSEARCH_USE_SSL=False \
     ELASTICSEARCH_VERIFY_CERTS=False
 
-# Create Elastalert user
-RUN addgroup "${ELASTALERT_SYSTEM_GROUP}" && \
-    adduser -S -G "${ELASTALERT_SYSTEM_GROUP}" "${ELASTALERT_SYSTEM_USER}"
-
 # Install packages
 RUN set -ex \
     && apk update \
@@ -71,10 +67,13 @@ RUN set -ex \
     && chmod +x "/usr/local/bin/dockerize" \
     && rm dockerize.tar.gz
 
-# Create directories. The /var/empty directory is used by openntpd.
+# Create directories and Elastalert system user/group.
+# The /var/empty directory is used by openntpd.
 RUN mkdir -p "${CONFIG_FOLDER}" \
     && mkdir -p "${RULES_FOLDER}" \
     && mkdir -p /var/empty \
+    && addgroup "${ELASTALERT_SYSTEM_GROUP}" \
+    && adduser -S -G "${ELASTALERT_SYSTEM_GROUP}" "${ELASTALERT_SYSTEM_USER}" \
     && chown -R "${ELASTALERT_SYSTEM_USER}":"${ELASTALERT_SYSTEM_GROUP}" "${CONFIG_FOLDER}" "${RULES_FOLDER}"
 
 # Copy the ${ELASTALERT_CONFIG} template
