@@ -6,18 +6,18 @@ LABEL maintainer="Scott Crooks <scott.crooks@gmail.com>"
 ## CONFIG_FOLDER => Directory holding configuration for Elastalert.
 ## CONTAINER_TIMEZONE => Default container timezone as found under the directory /usr/share/zoneinfo/.
 ## DOCKERIZE_VERSION => Version of `dockerize` binary to download.
-## DUMBINIT_VERSION => Specify the `dumb-init` version to use for starting the Python process; more info here: https://github.com/Yelp/dumb-init
 ## RULES_FOLDER => Elastalert rules directory.
 ## SET_CONTAINER_TIMEZONE => Set this environment variable to True to set timezone on container start.
 
 ENV CONFIG_FOLDER=/opt/elastalert/config \
     CONTAINER_TIMEZONE=Etc/UTC \
     DOCKERIZE_VERSION=0.5.0 \
-    DUMBINIT_VERSION=1.2.0 \
+    ELASTALERT_SYSTEM_GROUP=elastalert \
+    ELASTALERT_SYSTEM_USER=elastalert \
     RULES_FOLDER=/opt/elastalert/rules \
     SET_CONTAINER_TIMEZONE=True
 
-# Set parameters needed for the `src/start-elastalert` script
+# Set parameters needed for the `src/docker-entrypoint.sh` script
 ## ELASTALERT_CONFIG => Location of the Elastalert configuration file based on the ${CONFIG_FOLDER}
 ## ELASTALERT_INDEX => ElastAlert writeback index
 ## ELASTICSEARCH_HOST => Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
@@ -39,11 +39,13 @@ RUN set -ex \
     && apk upgrade \
     && apk add --no-cache \
         ca-certificates \
+        dumb-init \
         openntpd \
         openssl \
         py2-pip \
         py2-yaml \
         python2 \
+        su-exec \
         tzdata \
         wget \
     && apk add --no-cache --virtual \
@@ -53,7 +55,6 @@ RUN set -ex \
         musl-dev \
         openssl-dev \
         python2-dev \
-    && pip install dumb-init=="${DUMBINIT_VERSION}" \
     && pip install elastalert=="${ELASTALERT_VERSION}" \
     && apk del --purge .build-dependencies \
     && rm -rf /var/cache/apk/*
@@ -66,19 +67,20 @@ RUN set -ex \
     && chmod +x "/usr/local/bin/dockerize" \
     && rm dockerize.tar.gz
 
-# Create directories. The /var/empty directory is used by openntpd.
+# Create directories and Elastalert system user/group.
+# The /var/empty directory is used by openntpd.
 RUN mkdir -p "${CONFIG_FOLDER}" \
     && mkdir -p "${RULES_FOLDER}" \
-    && mkdir -p /var/empty
+    && mkdir -p /var/empty \
+    && addgroup "${ELASTALERT_SYSTEM_GROUP}" \
+    && adduser -S -G "${ELASTALERT_SYSTEM_GROUP}" "${ELASTALERT_SYSTEM_USER}" \
+    && chown -R "${ELASTALERT_SYSTEM_USER}":"${ELASTALERT_SYSTEM_GROUP}" "${CONFIG_FOLDER}" "${RULES_FOLDER}"
 
 # Copy the ${ELASTALERT_CONFIG} template
 COPY src/elastalert_config.yaml.tmpl "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl"
 
 # Copy the script used to launch the Elastalert when a container is started.
-COPY src/start-elastalert /opt/elastalert/
-
-# Make the start-script executable.
-RUN chmod +x /opt/elastalert/start-elastalert
+COPY src/docker-entrypoint.sh /docker-entrypoint.sh
 
 # The square brackets around the 'e' are intentional. They prevent `grep`
 # itself from showing up in the process list and falsifying the results.
@@ -87,7 +89,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD ps -ef | grep "[e]lastalert.elastalert" >/dev/null 2>&1
 
 # Runs "/usr/bin/dumb-init -- /my/script --with --args"
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-
-# Launch Elastalert when a container is started.
-CMD ["/opt/elastalert/start-elastalert"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
