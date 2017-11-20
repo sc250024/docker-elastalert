@@ -12,6 +12,8 @@ LABEL maintainer="Scott Crooks <scott.crooks@gmail.com>"
 ENV CONFIG_FOLDER=/opt/elastalert/config \
     CONTAINER_TIMEZONE=Etc/UTC \
     DOCKERIZE_VERSION=0.5.0 \
+    ELASTALERT_SYSTEM_GROUP=elastalert \
+    ELASTALERT_SYSTEM_USER=elastalert \
     RULES_FOLDER=/opt/elastalert/rules \
     SET_CONTAINER_TIMEZONE=True
 
@@ -32,8 +34,8 @@ ENV ELASTALERT_CONFIG="${CONFIG_FOLDER}/elastalert_config.yaml" \
     ELASTICSEARCH_VERIFY_CERTS=False
 
 # Create Elastalert user
-RUN addgroup elastalert && \
-    adduser -S -G elastalert elastalert
+RUN addgroup "${ELASTALERT_SYSTEM_GROUP}" && \
+    adduser -S -G "${ELASTALERT_SYSTEM_GROUP}" "${ELASTALERT_SYSTEM_USER}"
 
 # Install packages
 RUN set -ex \
@@ -41,7 +43,7 @@ RUN set -ex \
     && apk upgrade \
     && apk add --no-cache \
         ca-certificates \
-        dumt-init \
+        dumb-init \
         openntpd \
         openssl \
         py2-pip \
@@ -73,7 +75,7 @@ RUN set -ex \
 RUN mkdir -p "${CONFIG_FOLDER}" \
     && mkdir -p "${RULES_FOLDER}" \
     && mkdir -p /var/empty \
-    && chown -R elastalert:elastalert "${CONFIG_FOLDER}" "${RULES_FOLDER}"
+    && chown -R "${ELASTALERT_SYSTEM_USER}":"${ELASTALERT_SYSTEM_GROUP}" "${CONFIG_FOLDER}" "${RULES_FOLDER}"
 
 # Copy the ${ELASTALERT_CONFIG} template
 COPY src/elastalert_config.yaml.tmpl "${CONFIG_FOLDER}/elastalert_config.yaml.tmpl"
