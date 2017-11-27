@@ -12,14 +12,15 @@ LABEL maintainer="Scott Crooks <scott.crooks@gmail.com>"
 ENV CONFIG_FOLDER=/opt/elastalert/config \
     CONTAINER_TIMEZONE=Etc/UTC \
     DOCKERIZE_VERSION=0.5.0 \
-    ELASTALERT_SYSTEM_GROUP=elastalert \
-    ELASTALERT_SYSTEM_USER=elastalert \
     RULES_FOLDER=/opt/elastalert/rules \
     SET_CONTAINER_TIMEZONE=True
 
 # Set parameters needed for the `src/docker-entrypoint.sh` script
 ## ELASTALERT_CONFIG => Location of the Elastalert configuration file based on the ${CONFIG_FOLDER}
 ## ELASTALERT_INDEX => ElastAlert writeback index
+## ELASTALERT_SYSTEM_GROUP => User to run the Elastlalert process
+## ELASTALERT_SYSTEM_USER => Group to run the Elastlalert process
+## ELASTALERT_VERSION => Version of Elastalert to install and run
 ## ELASTICSEARCH_HOST => Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
 ## ELASTICSEARCH_PORT => Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
 ## ELASTICSEARCH_USE_SSL => Use TLS to connect to Elasticsearch (True or False)
@@ -27,6 +28,8 @@ ENV CONFIG_FOLDER=/opt/elastalert/config \
 
 ENV ELASTALERT_CONFIG="${CONFIG_FOLDER}/elastalert_config.yaml" \
     ELASTALERT_INDEX=elastalert_status \
+    ELASTALERT_SYSTEM_GROUP=elastalert \
+    ELASTALERT_SYSTEM_USER=elastalert \
     ELASTALERT_VERSION=0.1.21 \
     ELASTICSEARCH_HOST=elasticsearch \
     ELASTICSEARCH_PORT=9200 \
