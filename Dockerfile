@@ -1,4 +1,4 @@
-FROM alpine:3.6
+FROM alpine:3.7
 
 LABEL maintainer="Scott Crooks <scott.crooks@gmail.com>"
 
@@ -11,7 +11,7 @@ LABEL maintainer="Scott Crooks <scott.crooks@gmail.com>"
 
 ENV CONFIG_FOLDER=/opt/elastalert/config \
     CONTAINER_TIMEZONE=Etc/UTC \
-    DOCKERIZE_VERSION=0.5.0 \
+    DOCKERIZE_VERSION=0.6.0 \
     RULES_FOLDER=/opt/elastalert/rules \
     SET_CONTAINER_TIMEZONE=True
 
@@ -30,7 +30,7 @@ ENV ELASTALERT_CONFIG="${CONFIG_FOLDER}/elastalert_config.yaml" \
     ELASTALERT_INDEX=elastalert_status \
     ELASTALERT_SYSTEM_GROUP=elastalert \
     ELASTALERT_SYSTEM_USER=elastalert \
-    ELASTALERT_VERSION=0.1.21 \
+    ELASTALERT_VERSION=0.1.29 \
     ELASTICSEARCH_HOST=elasticsearch \
     ELASTICSEARCH_PORT=9200 \
     ELASTICSEARCH_USE_SSL=False \
