@@ -125,6 +125,13 @@ init() {
     __start_elastalert
 }
 
+if [ "${1}" == "check-rules" ]; then
+    __check_rules
+    exit 0
+else
+    init
+fi
+
 init
 
 exec "$@"
