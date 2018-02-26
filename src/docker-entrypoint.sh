@@ -126,6 +126,9 @@ init() {
 }
 
 if [ "${1}" == "check-rules" ]; then
+    __set_script_variables
+    __set_elastalert_config
+    __set_folder_permissions
     __check_rules
     exit 0
 else
