@@ -53,12 +53,12 @@ These variables are set during the Docker build, and are generally necessary for
 | :--- | :--- | :--- | :--- |
 | CONFIG_FOLDER | N/A | `/opt/elastalert/config` | Place Elastalert configs here |
 | CONTAINER_TIMEZONE | N/A | `Etc/UTC` | Container timezone value |
-| DOCKERIZE_VERSION | N/A | `0.5.0` | Version of Dockerize binary to download |
+| DOCKERIZE_VERSION | N/A | `0.6.0` | Version of Dockerize binary to download |
 | ELASTALERT_CONFIG | N/A | `${CONFIG_FOLDER}/elastalert_config.yaml` | Name and location of the config file referenced by `src/start-elastalert` to start the Python daemon |
 | ELASTALERT_INDEX | `writeback_index` | `elastalert_status` | Name of the Elastalert index in your Elasticsearch cluster |
 | ELASTALERT_SYSTEM_GROUP | N/A | `elastalert` | Name of the user running Elastalert; used for the daemon and folder permissions |
 | ELASTALERT_SYSTEM_USER | N/A | `elastalert` | Name of the group running Elastalert; used for the daemon and folder permissions |
-| ELASTALERT_VERSION | N/A | `0.1.21` | Version of Elastalert to install from `pip` |
+| ELASTALERT_VERSION | N/A | `0.1.29` | Version of Elastalert to install from `pip` |
 | ELASTICSEARCH_HOST | `es_host` | `elasticsearch` | Desc |
 | ELASTICSEARCH_PORT | `es_port` | `9200` | Desc |
 | ELASTICSEARCH_USE_SSL | `use_ssl` | `False` | Connect with TLS to Elasticsearch |

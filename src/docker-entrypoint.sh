@@ -125,6 +125,10 @@ init() {
     __start_elastalert
 }
 
-init
+if [ "${1}" == "check_rules" ]; then
+    __check_rules
+else
+    init
+fi
 
 exec "$@"
