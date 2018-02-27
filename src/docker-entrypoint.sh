@@ -131,8 +131,6 @@ if [ "${1}" == "check-rules" ]; then
     __set_folder_permissions
     __check_rules
     exit 0
-else
-    init
 fi
 
 init
