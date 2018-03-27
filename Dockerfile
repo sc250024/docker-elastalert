@@ -11,7 +11,7 @@ LABEL maintainer="Scott Crooks <scott.crooks@gmail.com>"
 
 ENV CONFIG_FOLDER=/opt/elastalert/config \
     CONTAINER_TIMEZONE=Etc/UTC \
-    DOCKERIZE_VERSION=0.6.0 \
+    DOCKERIZE_VERSION=0.6.1 \
     RULES_FOLDER=/opt/elastalert/rules \
     SET_CONTAINER_TIMEZONE=True
 
@@ -58,6 +58,7 @@ RUN set -ex \
         musl-dev \
         openssl-dev \
         python2-dev \
+    && pip install --upgrade pip \
     && pip install elastalert=="${ELASTALERT_VERSION}" \
     && apk del --purge .build-dependencies \
     && rm -rf /var/cache/apk/*
